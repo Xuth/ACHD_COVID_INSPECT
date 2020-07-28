@@ -20,15 +20,25 @@ def listify(v):
     return [v]
         
 
+class ImportFail(Exception):
+    pass
+
 class Report:
-    def __init__(self, xml=None, csvDict=None):
+    
+    def __init__(self, xml):
         self.assessmentStats = {}
         
-        
         if xml is not None:
-            self.parseXml(xml)
+            try:
+                self.parseXml(xml)
+            except RuntimeError:
+                raise
+            except:
+                raise ImportFail()
+            
         else:
-            log.warn("nothing to import in report")
+            log.warning("nothing to import in report")
+            raise ImportFail()
 
             
     def parseXml(self, xmlString):
@@ -205,9 +215,12 @@ def main():
     print(reportsAvailable)
     rptDict = {}
     for encounter in reportsAvailable:
-        rpt = getReport(encounter)
-        rptDict[encounter] = rpt
-
+        try:
+            rpt = getReport(encounter)
+            rptDict[encounter] = rpt
+        except ImportFail:
+            pass
+        
     with open('acr_summary.csv', 'w') as f:
         csvOut = csv.writer(f)
         csvOut.writerow(["ACHD COVID restaurant reports summary"])
